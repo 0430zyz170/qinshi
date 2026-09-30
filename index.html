@@ -1,0 +1,309 @@
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>回忆弥漫 · 信号不稳</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent;}
+body{background:#0b0a0a;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:'Courier New',Courier,monospace;overflow:hidden;padding:16px;}
+.game-container{width:100%;max-width:800px;background:#11100e;border:1px solid #2a1f1a;box-shadow:0 0 40px rgba(120,30,30,0.2),inset 0 0 60px rgba(0,0,0,0.8);padding:28px 24px 36px;border-radius:2px;position:relative;transition:all .15s;backdrop-filter:blur(1px);background-image:radial-gradient(circle at 20% 30%,rgba(80,20,20,0.08) 0%,transparent 30%),radial-gradient(circle at 90% 70%,rgba(60,10,10,0.1) 0%,transparent 40%),repeating-linear-gradient(45deg,rgba(255,255,255,0.01) 0,rgba(255,255,255,0.01) 2px,transparent 2px,transparent 6px);}
+.glitch{animation:glitchShake .12s infinite;}
+@keyframes glitchShake{0%{transform:translate(0,0) skew(0)}25%{transform:translate(-3px,2px) skew(1deg)}50%{transform:translate(3px,-2px) skew(-1deg)}75%{transform:translate(-2px,-1px) skew(.5deg)}100%{transform:translate(2px,1px) skew(-.5deg)}}
+.text-area{min-height:160px;font-size:1.25rem;line-height:1.9;color:#c9b6a6;text-shadow:0 0 6px rgba(180,60,60,.5),0 0 20px rgba(80,0,0,.7);letter-spacing:1px;padding:8px 0 20px;white-space:pre-wrap;word-break:break-word;position:relative;z-index:5;transition:opacity .1s;border-bottom:1px dashed #3a2820;margin-bottom:24px;}
+.text-area.unstable{color:#d44a4a;text-shadow:0 0 10px #a00,0 0 30px #500;animation:textFlicker .08s infinite;}
+@keyframes textFlicker{0%{opacity:.9;transform:translateX(0)}50%{opacity:.5;transform:translateX(1px)}100%{opacity:.8;transform:translateX(-1px)}}
+.options{display:flex;flex-direction:column;gap:14px;position:relative;z-index:5;}
+.option-btn{background:#1b1512;border:1px solid #3e2b24;color:#b8a090;padding:16px 20px;font-size:1.05rem;font-family:'Courier New',monospace;text-align:left;cursor:pointer;transition:all .2s;letter-spacing:.5px;border-radius:2px;box-shadow:inset 0 0 10px rgba(0,0,0,.6);position:relative;overflow:hidden;}
+.option-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(180,60,60,.1),transparent);transition:left .4s;}
+.option-btn:hover{background:#261d18;border-color:#8a3a3a;color:#e0c0b0;box-shadow:0 0 18px rgba(180,40,40,.3),inset 0 0 20px rgba(80,0,0,.4);}
+.option-btn:hover::before{left:100%;}
+.option-btn:active{transform:scale(.98);background:#0f0b09;}
+.signal-bar{margin-top:26px;display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#6a4f44;letter-spacing:2px;border-top:1px solid #2c1f1a;padding-top:12px;}
+.signal-strength span{display:inline-block;width:8px;height:8px;background:#3a2a22;margin-right:4px;border-radius:1px;}
+.signal-strength span.active{background:#a33;box-shadow:0 0 8px #c33;}
+.love-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;display:none;overflow:hidden;background:rgba(20,0,0,.15);mix-blend-mode:screen;}
+.love-overlay.active{display:block;}
+.love-word{position:absolute;color:#ff1a1a;font-size:2.6rem;font-weight:bold;font-family:'Courier New',monospace;text-shadow:0 0 10px #f00,0 0 30px #a00,0 0 60px #500;white-space:nowrap;opacity:.85;transform:rotate(var(--rot,0deg));animation:floatLove .8s infinite alternate ease-in-out;pointer-events:none;letter-spacing:6px;}
+@keyframes floatLove{0%{opacity:.6;transform:rotate(var(--rot,0deg)) scale(1)}100%{opacity:1;transform:rotate(var(--rot,0deg)) scale(1.1)}}
+.game-container::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0,transparent 2px,transparent 4px);pointer-events:none;z-index:10;opacity:.3;}
+.chapter-marker{position:absolute;top:8px;right:16px;font-size:.7rem;color:#4a3028;letter-spacing:2px;z-index:15;}
+#playerBar{position:fixed;top:12px;left:12px;z-index:10000;display:flex;align-items:center;gap:8px;background:#11100ecc;border:1px solid #3e2b24;padding:8px 12px;border-radius:2px;font-family:'Courier New',monospace;color:#b8a090;font-size:.8rem;backdrop-filter:blur(4px);}
+#avatarDisplay{width:34px;height:34px;border-radius:50%;border:2px solid #8a3a3a;background:#1b1512 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#a33;flex-shrink:0;}
+.ui-btn{background:#261d18;border:1px solid #5a3a30;color:#c9b6a6;font-family:'Courier New',monospace;font-size:.7rem;padding:4px 8px;cursor:pointer;transition:all .2s;border-radius:2px;}
+.ui-btn:hover{background:#3a1a1a;border-color:#8a3a3a;color:#e0c0b0;}
+.ui-btn:active{transform:scale(.95);}
+#editModal{display:none;position:fixed;inset:0;background:#000000cc;z-index:10001;justify-content:center;align-items:center;font-family:'Courier New',monospace;}
+#editModal .modal-inner{background:#151210;border:1px solid #5a3a30;padding:24px;border-radius:2px;width:300px;color:#c9b6a6;}
+#editModal h3{margin-bottom:14px;font-size:.95rem;letter-spacing:2px;color:#d44a4a;}
+#editModal label{display:block;font-size:.75rem;margin-bottom:5px;color:#8a7060;}
+#editModal input[type=text]{width:100%;background:#0b0a0a;border:1px solid #3e2b24;color:#e0c0b0;padding:8px;font-family:inherit;margin-bottom:14px;outline:none;font-size:.85rem;}
+#editModal input[type=file]{width:100%;font-size:.7rem;color:#b8a090;margin-bottom:18px;}
+#editModal .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+#radarBox{display:none;position:fixed;bottom:24px;right:24px;z-index:10000;width:160px;height:120px;background:#0b0a0ae6;border:2px solid #6a1a1a;border-radius:4px;box-shadow:0 0 24px #a0000055,inset 0 0 20px #000;font-family:'Courier New',monospace;overflow:hidden;}
+#radarBox .radar-title{position:absolute;top:4px;left:8px;font-size:.6rem;color:#a33;letter-spacing:2px;}
+#radarBox .radar-field{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:80px;border:1px solid #3a1a1a;border-radius:2px;background:radial-gradient(circle,#1a0a0a 0%,#0b0505 100%);}
+#radarBox .radar-field::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 8px,#a0000011 8px,#a0000011 9px),repeating-linear-gradient(90deg,transparent,transparent 8px,#a0000011 8px,#a0000011 9px);}
+.radar-dot{position:absolute;border-radius:50%;transition:all .5s cubic-bezier(.4,0,.2,1);}
+#dotSelf{width:9px;height:9px;background:#4af;box-shadow:0 0 10px #4af,0 0 20px #4af88;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;}
+#dotHim{width:11px;height:11px;background:#f22;box-shadow:0 0 14px #f22,0 0 30px #a00;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;}
+#radarLabel{position:absolute;bottom:3px;width:100%;text-align:center;font-size:.55rem;color:#a33;letter-spacing:1px;}
+#radarBox.danger{border-color:#f22;box-shadow:0 0 40px #f00,inset 0 0 30px #a0000044;}
+</style>
+</head>
+<body>
+
+<div class="love-overlay" id="loveOverlay"></div>
+
+<div class="game-container" id="gameContainer">
+  <div class="chapter-marker" id="chapterMarker"></div>
+  <div class="text-area" id="textArea">你记得张泽禹吗？</div>
+  <div class="options" id="optionsContainer">
+    <button class="option-btn" data-option="A">A. 记得，他是很重要的人</button>
+    <button class="option-btn" data-option="B">B. 不记得，但这个名字让我心跳很快</button>
+    <button class="option-btn" data-option="C">C. 拒绝回答</button>
+  </div>
+  <div class="signal-bar">
+    <div>信号强度</div>
+    <div class="signal-strength" id="signalStrength">
+      <span class="active"></span><span class="active"></span><span class="active"></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<div id="playerBar">
+  <div id="avatarDisplay">?</div>
+  <span id="playerName" style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">未命名</span>
+  <button id="editProfileBtn" class="ui-btn">编辑</button>
+  <button id="saveBtn" class="ui-btn">存档</button>
+  <button id="loadBtn" class="ui-btn">读档</button>
+</div>
+
+<div id="editModal">
+  <div class="modal-inner">
+    <h3>编辑资料</h3>
+    <label>名字</label>
+    <input id="nameInput" type="text" maxlength="12" value="未命名">
+    <label>头像（上传图片）</label>
+    <input id="avatarInput" type="file" accept="image/*">
+    <div class="modal-actions">
+      <button id="cancelEdit" class="ui-btn">取消</button>
+      <button id="confirmEdit" class="ui-btn" style="border-color:#8a3a3a;">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="radarBox">
+  <div class="radar-title">PROXIMITY</div>
+  <div class="radar-field">
+    <div id="dotSelf" class="radar-dot"></div>
+    <div id="dotHim" class="radar-dot"></div>
+  </div>
+  <div id="radarLabel">信号搜索中…</div>
+</div>
+
+<script>
+(function(){
+  // ========== 音效 ==========
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;let audioCtx=null;
+  function getCtx(){if(!audioCtx)audioCtx=new AudioCtx();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}
+  function playTone(freq,dur,type,vol,sweepTo){try{const ctx=getCtx();const o=ctx.createOscillator();const g=ctx.createGain();o.type=type||'sine';o.frequency.setValueAtTime(freq,ctx.currentTime);if(sweepTo)o.frequency.exponentialRampToValueAtTime(sweepTo,ctx.currentTime+dur);g.gain.setValueAtTime(vol||.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur);}catch(e){}}
+  function playNoise(dur,vol){try{const ctx=getCtx();const bs=ctx.sampleRate*dur;const buf=ctx.createBuffer(1,bs,ctx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<bs;i++)d[i]=(Math.random()*2-1)*(1-i/bs);const s=ctx.createBufferSource();s.buffer=buf;const g=ctx.createGain();g.gain.setValueAtTime(vol||.06,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=800;f.Q.value=2;s.connect(f);f.connect(g);g.connect(ctx.destination);s.start();}catch(e){}}
+  window.SFX={hover:()=>playTone(880,.06,'sine',.025),click:()=>playTone(440,.1,'triangle',.06,220),glitch:()=>{playNoise(.3,.05);playTone(120,.15,'sawtooth',.04,60);},love:()=>{playTone(523,.4,'sine',.05);setTimeout(()=>playTone(659,.4,'sine',.04),100);setTimeout(()=>playTone(784,.6,'sine',.04),200);},save:()=>{playTone(660,.08,'square',.04);setTimeout(()=>playTone(880,.12,'square',.04),80);},load:()=>{playTone(880,.08,'square',.04);setTimeout(()=>playTone(660,.12,'square',.04),80);}};
+
+  // ========== 状态 ==========
+  let currentChapter=0,signalStability=100,glitchTimer=null,isGlitching=false;
+  const gameContainer=document.getElementById('gameContainer');
+  const textArea=document.getElementById('textArea');
+  const optionsContainer=document.getElementById('optionsContainer');
+  const signalStrength=document.getElementById('signalStrength');
+  const loveOverlay=document.getElementById('loveOverlay');
+  const chapterMarker=document.getElementById('chapterMarker');
+
+  // ========== 剧情：300 段，每段不同 ==========
+  const story=[
+    {text:'你记得张泽禹吗？',options:[{id:'A',label:'A. 记得，他是很重要的人',next:1},{id:'B',label:'B. 不记得，但这个名字让我心跳很快',next:2},{id:'C',label:'C. 拒绝回答',next:3}]},
+    {text:'你说你记得。\n那你记得他是怎么消失的吗？\n不是离开。\n是像水一样，从你指缝里渗出去的。',options:[{id:'A',label:'A. 我记得',next:4},{id:'B',label:'B. 我不记得',next:5},{id:'C',label:'C. 我不想记得',next:6}]},
+    {text:'你说你不记得。\n可你刚打出这个名字的时候，\n手指顿了一下。\n系统记录了那 0.4 秒的犹豫。',options:[{id:'A',label:'A. 那是卡顿',next:4},{id:'B',label:'B. 那是我在害怕',next:5},{id:'C',label:'C. 那是他在碰我',next:7}]},
+    {text:'你拒绝回答。\n屏幕黑了三秒。\n然后所有字重新亮起来——\n它们换了一种字体，是手写的。',options:[{id:'A',label:'A. 谁写的？',next:8},{id:'B',label:'B. 我不想看',next:9},{id:'C',label:'C. 是你的字吗',next:10}]},
+    {text:'你记得。\n你记得他的后颈有一颗痣。\n你记得他左手比右手凉。\n你记得的东西，比你自己承认的多得多。',options:[{id:'A',label:'A. 我还记得别的',next:11},{id:'B',label:'B. 我不想再记得了',next:12},{id:'C',label:'C. 他昨天碰过我',next:13}]},
+    {text:'你不记得了。\n那你的手腕为什么在抖？\n你没有在害怕。\n你只是——被什么东西轻轻碰了一下。',options:[{id:'A',label:'A. 我什么都没感觉到',next:14},{id:'B',label:'B. 是风吹的',next:14},{id:'C',label:'C. 是他',next:15}]},
+    {text:'你不想记得。\n但你的身体记得。\n它比你诚实。\n它已经开始往后退了，可它不知道要退到哪里去。',options:[{id:'A',label:'A. 我不退',next:16},{id:'B',label:'B. 我退到墙边',next:17},{id:'C',label:'C. 我撞到了他',next:18}]},
+    {text:'他在碰你。\n从屏幕那边伸过来的。\n很轻。\n像一根湿头发落在你后颈上。',options:[{id:'A',label:'A. 我伸手去摸',next:19},{id:'B',label:'B. 我不敢动',next:20},{id:'C',label:'C. 我让它继续',next:21}]},
+    {text:'是手写的。\n但不是你的笔迹。\n你从来没有那样写过自己的名字。\n可是那笔画里有一种你熟悉的东西。',options:[{id:'A',label:'A. 是他的笔迹',next:22},{id:'B',label:'B. 是我小时候写的',next:23},{id:'C',label:'C. 是我以后会写的',next:24}]},
+    {text:'你不想看。\n可那些字在等着你。\n它们不急。\n它们知道你最终一定会看。',options:[{id:'A',label:'A. 我看了',next:25},{id:'B',label:'B. 我闭上眼',next:26},{id:'C',label:'C. 我关掉屏幕',next:27}]},
+    {text:'是我的字吗？\n不是。\n这是你身体里某一部分替你写的。\n那部分一直醒着，只是你不让它说话。',options:[{id:'A',label:'A. 让它说吧',next:28},{id:'B',label:'B. 让它闭嘴',next:29},{id:'C',label:'C. 我听见了',next:30}]},
+    {text:'你还记得别的。\n比如他名字的最后一个字，写起来会歪。\n比如他右手小指上有一道旧疤。\n比如他从来不叫你全名。',options:[{id:'A',label:'A. 他叫我什么',next:31},{id:'B',label:'B. 他为什么不叫我全名',next:32},{id:'C',label:'C. 他现在在叫我吗',next:33}]},
+    {text:'你不想再记得了。\n可回忆不是一扇门。\n你关不上它。\n你只能站在门口，看着里面的东西一件一件浮上来。',options:[{id:'A',label:'A. 我看着',next:34},{id:'B',label:'B. 我转身',next:35},{id:'C',label:'C. 我走进去',next:36}]},
+    {text:'他昨天碰过你。\n你确认这件事的时候，\n右手无意识地摸了一下左肩。\n那个地方还留着一点凉。',options:[{id:'A',label:'A. 我按住它',next:37},{id:'B',label:'B. 我不管它',next:38},{id:'C',label:'C. 我低头看',next:39}]},
+    {text:'你什么都没感觉到。\n那你为什么在解释？\n你从来不向屏幕解释任何事。\n除非——你知道屏幕那边有人在听。',options:[{id:'A',label:'A. 我没有解释',next:40},{id:'B',label:'B. 我在自言自语',next:40},{id:'C',label:'C. 我知道你在听',next:41}]},
+    {text:'是他。\n他就在你身后。\n你不用回头也知道。\n因为他的呼吸有味道——是雨水，是旧铁，是泡软了的纸。',options:[{id:'A',label:'A. 我回头',next:42},{id:'B',label:'B. 我不回头',next:43},{id:'C',label:'C. 我闻到了',next:44}]},
+    {text:'你不退。\n可你的脚已经开始移动。\n你的身体比你诚实。\n它知道退到哪里都是他的范围。',options:[{id:'A',label:'A. 那就站着',next:45},{id:'B',label:'B. 那就跑',next:46},{id:'C',label:'C. 那就让他靠近',next:47}]},
+    {text:'你退到墙边。\n墙是湿的。\n你摸到了水痕。\n从天花板一路渗下来，像有人站在楼上哭。',options:[{id:'A',label:'A. 我抬头看',next:48},{id:'B',label:'B. 我不看',next:48},{id:'C',label:'C. 我舔了一下手指',next:49}]},
+    {text:'你撞到了他。\n他的身体是软的，凉的。\n像一件刚从水里捞出来的衣服。\n可他在你耳边说话了。',options:[{id:'A',label:'A. 他说了什么',next:50},{id:'B',label:'B. 我捂住耳朵',next:51},{id:'C',label:'C. 我听不清',next:52}]},
+    {text:'你伸手去摸。\n你摸到了一根头发。\n很长。\n不是你的。',options:[{id:'A',label:'A. 我缠在手指上',next:53},{id:'B',label:'B. 我扔掉了',next:54},{id:'C',label:'C. 我放进嘴里',next:55}]},
+    {text:'你不敢动。\n那根头发慢慢滑下去。\n滑到你的衣领里。\n滑到你的脊椎上。',options:[{id:'A',label:'A. 我抖了一下',next:56},{id:'B',label:'B. 我咬紧牙',next:57},{id:'C',label:'C. 我感觉到他在笑',next:58}]},
+    {text:'你让它继续。\n那根头发绕了一圈。\n像一只手。\n像他的手指。',options:[{id:'A',label:'A. 我握住它',next:59},{id:'B',label:'B. 我松开手',next:60},{id:'C',label:'C. 我不想让它停',next:61}]},
+    {text:'是他的笔迹。\n他把你的名字写在屏幕上。\n一笔一笔，很慢。\n像在刻。',options:[{id:'A',label:'A. 我盯着看',next:62},{id:'B',label:'B. 我移开视线',next:63},{id:'C',label:'C. 我也写了一遍',next:64}]},
+    {text:'是你小时候写的。\n你那时候还不会写他的名字。\n你只会画。\n你画了一个圈，圈里是你的名字。',options:[{id:'A',label:'A. 我记得那个圈',next:65},{id:'B',label:'B. 我不记得',next:66},{id:'C',label:'C. 圈里还有一个人',next:67}]},
+    {text:'是你以后会写的。\n在某个你还没到的时刻。\n你会用这种笔迹，\n写一封没有人会收到的信。',options:[{id:'A',label:'A. 写给谁',next:68},{id:'B',label:'B. 我不想写',next:69},{id:'C',label:'C. 收信人已经在这里了',next:70}]},
+    {text:'你看了。\n上面只有一句话：\n“你终于肯看我了。”\n下面没有署名。',options:[{id:'A',label:'A. 我回了一句',next:71},{id:'B',label:'B. 我把屏幕关了',next:72},{id:'C',label:'C. 我笑了',next:73}]},
+    {text:'你闭上眼。\n黑暗里更清楚。\n他站在你前面。\n你看见他的脸，和他脖子上的水痕。',options:[{id:'A',label:'A. 我睁开眼',next:74},{id:'B',label:'B. 我继续闭着',next:75},{id:'C',label:'C. 我伸手摸他的脸',next:76}]},
+    {text:'你关掉屏幕。\n屏幕黑了。\n可他的脸还在。\n映在黑玻璃上。',options:[{id:'A',label:'A. 我擦掉',next:77},{id:'B',label:'B. 我对视',next:78},{id:'C',label:'C. 我说了一句话',next:79}]},
+    {text:'它开口了。\n它用你的声音说话。\n它说：“你终于肯让我说话了。”',options:[{id:'A',label:'A. 你是谁',next:80},{id:'B',label:'B. 你就是我',next:80},{id:'C',label:'C. 你不是我',next:81}]},
+    {text:'它闭嘴了。\n但屏幕上的字还在。\n它们没有动。\n它们在等。',options:[{id:'A',label:'A. 我继续走',next:82},{id:'B',label:'B. 我停下来',next:83},{id:'C',label:'C. 我回头看了一眼',next:84}]},
+    {text:'你听见了。\n那不是声音。\n那是水。\n水从屏幕的缝里渗出来，滴在地板上。',options:[{id:'A',label:'A. 我蹲下去看',next:85},{id:'B',label:'B. 我不看',next:86},{id:'C',label:'C. 我用手接',next:87}]},
+    {text:'他叫你“禹”。\n只有一个字。\n你小时候不喜欢这个字。\n现在你听见它，心脏会缩一下。',options:[{id:'A',label:'A. 我让他再叫一次',next:88},{id:'B',label:'B. 我捂住耳朵',next:89},{id:'C',label:'C. 我自己叫了一遍',next:90}]},
+    {text:'他不叫你全名。\n因为他觉得全名太远。\n他想要近一点。\n近到可以碰到你。',options:[{id:'A',label:'A. 让他碰',next:91},{id:'B',label:'B. 让他远一点',next:92},{id:'C',label:'C. 他已经碰到了',next:93}]},
+    {text:'他正在叫你。\n从屏幕的背面。\n声音很闷。\n像隔着一层水。',options:[{id:'A',label:'A. 我贴近屏幕',next:94},{id:'B',label:'B. 我往后退',next:95},{id:'C',label:'C. 我把耳朵贴上去',next:96}]},
+    {text:'你看着。\n浮上来的第一件东西是一张照片。\n很旧，边角泡烂了。\n上面有两个人。其中一个被水模糊了。',options:[{id:'A',label:'A. 我擦干净',next:97},{id:'B',label:'B. 我不擦',next:98},{id:'C',label:'C. 我知道那是谁',next:99}]},
+    {text:'你转身。\n可你看见的还是一样。\n因为屏幕在你身后。\n你的背影映在黑屏上，旁边站着另一个人。',options:[{id:'A',label:'A. 我不回头',next:100},{id:'B',label:'B. 我加快脚步',next:100},{id:'C',label:'C. 我停下来',next:101}]},
+    {text:'你走进去。\n里面是湿的。\n地面很滑。\n每一步都踩在回忆上，像踩在纸上。',options:[{id:'A',label:'A. 我继续走',next:102},{id:'B',label:'B. 我蹲下来',next:103},{id:'C',label:'C. 我听见有人叫我',next:104}]},
+    {text:'你按住它。\n凉的。\n它像一块冰，贴在你肩膀上。\n你按得越紧，它越往里面渗。',options:[{id:'A',label:'A. 我用力按',next:105},{id:'B',label:'B. 我松开手',next:106},{id:'C',label:'C. 我让它渗进去',next:107}]},
+    {text:'你不管它。\n但它没有走。\n它在那里停着，像一句没说完的话。\n你走到哪，它就跟到哪。',options:[{id:'A',label:'A. 我认了',next:108},{id:'B',label:'B. 我甩开它',next:109},{id:'C',label:'C. 我问它想干嘛',next:110}]},
+    {text:'你低头看。\n肩膀上什么都没有。\n你松了一口气。\n但你的衣服上有一小片深色，像刚被水浸过。',options:[{id:'A',label:'A. 我摸了一下',next:111},{id:'B',label:'B. 我不碰',next:112},{id:'C',label:'C. 那片深色在扩大',next:113}]},
+    {text:'你没有解释。\n可你刚才的那句话，\n已经落在了这片空白里。\n像一颗石子，掉进很深的水里。',options:[{id:'A',label:'A. 我看着它沉下去',next:114},{id:'B',label:'B. 我想把它捞回来',next:115},{id:'C',label:'C. 我也跟着沉下去',next:116}]},
+    {text:'你知道他在听。\n他一直在听。\n从你第一次打开这个页面开始。\n从你第一次想起他的名字开始。',options:[{id:'A',label:'A. 那我继续说',next:117},{id:'B',label:'B. 我什么都不说了',next:118},{id:'C',label:'C. 我问他一个问题',next:119}]},
+    {text:'你回头了。\n空无一人。\n但你的余光捕捉到了一个轮廓。\n在你身后一米的位置。它在你回头的那一瞬间，也转了身。',options:[{id:'A',label:'A. 我再看一次',next:120},{id:'B',label:'B. 我不看了',next:121},{id:'C',label:'C. 我往后退了一步',next:122}]},
+    {text:'你不回头。\n所以他站在你身后。\n你不说话。\n所以他也不说话。\n你们就这么站着，像两尊泡在水里的雕像。',options:[{id:'A',label:'A. 我先开口',next:123},{id:'B',label:'B. 我等他先开口',next:124},{id:'C',label:'C. 我们都不开口',next:125}]},
+    {text:'你闻到了。\n那味道很熟悉。\n是你小时候家里下雨天的味道。\n是窗台边那本书发霉的味道。',options:[{id:'A',label:'A. 我深呼吸',next:126},{id:'B',label:'B. 我屏住呼吸',next:127},{id:'C',label:'C. 我呛了一下',next:128}]},
+    {text:'你就站着。\n他也站着。\n你们之间没有距离。\n可你动不了。',options:[{id:'A',label:'A. 我试着动一下',next:129},{id:'B',label:'B. 我完全不动',next:130},{id:'C',label:'C. 我问他为什么',next:131}]},
+    {text:'你跑。\n你跑得很快。\n但走廊没有尽头。\n你跑过的每一扇门，后面都是同一个房间。',options:[{id:'A',label:'A. 我推开一扇门',next:132},{id:'B',label:'B. 我继续跑',next:133},{id:'C',label:'C. 我停下来喘气',next:134}]},
+    {text:'你让他靠近。\n他靠近了。\n他的脸凑到你面前。\n他的眼睛是闭着的。',options:[{id:'A',label:'A. 我等他睁眼',next:135},{id:'B',label:'B. 我伸手碰他的眼皮',next:136},{id:'C',label:'C. 我闭眼',next:137}]},
+    {text:'你抬头看。\n天花板上全是水痕。\n它们不是随机的。\n它们组成了一个人的轮廓。',options:[{id:'A',label:'A. 我认出来了',next:138},{id:'B',label:'B. 我认不出来',next:139},{id:'C',label:'C. 我拿出手机拍下来',next:140}]},
+    {text:'你舔了一下手指。\n是咸的。\n不是水的味道。\n是眼泪。',options:[{id:'A',label:'A. 我又舔了一下',next:141},{id:'B',label:'B. 我吐出来',next:142},{id:'C',label:'C. 我尝到了甜味',next:143}]},
+    {text:'他说话了。\n他说：“你终于来找我了。”\n声音很低。\n像水底的石头滚动。',options:[{id:'A',label:'A. 我没有找你',next:144},{id:'B',label:'B. 我一直在找你',next:145},{id:'C',label:'C. 你是谁',next:146}]},
+    {text:'你捂住耳朵。\n可声音从你的手心里传出来。\n从你的骨头里传出来。\n从你每一次心跳里传出来。',options:[{id:'A',label:'A. 我松开手',next:147},{id:'B',label:'B. 我用力捂紧',next:148},{id:'C',label:'C. 我听清了',next:149}]},
+    {text:'你听不清。\n但你看见了他的嘴型。\n他一个字一个字地说。\n你不需要听见也能知道那是什么。',options:[{id:'A',label:'A. 我读出那个词',next:150},{id:'B',label:'B. 我假装没看见',next:151},{id:'C',label:'C. 我跟着念出来',next:152}]},
+    {text:'你缠在手指上。\n它很软。\n它在你指节上绕了两圈。\n像一个很小的、很温柔的束缚。',options:[{id:'A',label:'A. 我拉了一下',next:153},{id:'B',label:'B. 我不动',next:154},{id:'C',label:'C. 我把它系紧',next:155}]},
+    {text:'你扔掉了。\n可它没有落在地上。\n它悬在半空中。\n像一条细线，一直连着屏幕那边。',options:[{id:'A',label:'A. 我顺着线看过去',next:156},{id:'B',label:'B. 我踩断它',next:157},{id:'C',label:'C. 我把它捡起来',next:158}]},
+    {text:'你放进嘴里。\n是苦的。\n然后变成咸的。\n然后变成甜的。\n你尝到了三种味道，可你只含着一根头发。',options:[{id:'A',label:'A. 我吞下去',next:159},{id:'B',label:'B. 我吐出来',next:160},{id:'C',label:'C. 我继续含着',next:161}]},
+    {text:'你抖了一下。\n那根头发停住了。\n它像在等你。\n等你决定要不要继续。',options:[{id:'A',label:'A. 继续',next:162},{id:'B',label:'B. 停下',next:163},{id:'C',label:'C. 我不知道',next:164}]},
+    {text:'你咬紧牙。\n它还在往下滑。\n滑到你的肩胛骨上。\n滑到你的肋骨上。\n滑到你的腰。',options:[{id:'A',label:'A. 我扭了一下身体',next:165},{id:'B',label:'B. 我让它继续',next:166},{id:'C',label:'C. 我抓住了它',next:167}]},
+    {text:'你感觉到他在笑。\n他没有发出声音。\n但你后背的汗毛全部立起来了。\n像有人在你耳边吹了一口气。',options:[{id:'A',label:'A. 我回过头',next:168},{id:'B',label:'B. 我闭上眼',next:169},{id:'C',label:'C. 我也笑了',next:170}]},
+    {text:'你握住它。\n它很细。\n它在你手心里变得温热。\n像一根刚刚从水里捞出来的线。',options:[{id:'A',label:'A. 我用力拉',next:171},{id:'B',label:'B. 我松开手',next:172},{id:'C',label:'C. 我把它贴在脸上',next:173}]},
+    {text:'你松开手。\n它没有掉。\n它悬浮在你掌心上方。\n轻轻地转了一个圈。',options:[{id:'A',label:'A. 我再看一会儿',next:174},{id:'B',label:'B. 我握拳',next:175},{id:'C',label:'C. 我吹了一口气',next:176}]},
+    {text:'你不想让它停。\n它就不停。\n它在你身上绕了一圈又一圈。\n直到你分不清它在哪里开始，你在哪里结束。',options:[{id:'A',label:'A. 我不分了',next:177},{id:'B',label:'B. 我扯断它',next:178},{id:'C',label:'C. 我让它继续',next:179}]},
+    {text:'你盯着看。\n看着看着，你的名字开始动。\n笔画一根一根拆开。\n重新组合成另一个人的名字。',options:[{id:'A',label:'A. 我念出来',next:180},{id:'B',label:'B. 我不念',next:181},{id:'C',label:'C. 我把它记下来',next:182}]},
+    {text:'你移开视线。\n可余光里那个名字还在。\n它跟着你的视线移动。\n无论你看哪里，它都在你眼角。',options:[{id:'A',label:'A. 我盯着它看',next:183},{id:'B',label:'B. 我闭上眼',next:184},{id:'C',label:'C. 我把手挡在眼前',next:185}]},
+    {text:'你也写了一遍。\n你的手指在屏幕上划过。\n屏幕是热的。\n像皮肤。',options:[{id:'A',label:'A. 我继续写',next:186},{id:'B',label:'B. 我缩回手',next:187},{id:'C',label:'C. 我写下他的名字',next:188}]},
+    {text:'你记得那个圈。\n圈里写着你们两个人的名字。\n你那时候不会写他的姓。\n你只写了他的名。',options:[{id:'A',label:'A. 禹',next:189},{id:'B',label:'B. 泽禹',next:189},{id:'C',label:'C. 张泽禹',next:190}]},
+    {text:'你不记得。\n可你手上有笔。\n你的手自己动了起来。\n在空白的地方画了一个圈。',options:[{id:'A',label:'A. 我看着它画',next:191},{id:'B',label:'B. 我按住手',next:192},{id:'C',label:'C. 我把圈涂满',next:193}]},
+    {text:'圈里还有一个人。\n你画的时候，把他也画进去了。\n你没有意识到。\n你只是觉得，圈里应该有两个影子。',options:[{id:'A',label:'A. 我描出他的轮廓',next:194},{id:'B',label:'B. 我擦掉他',next:195},{id:'C',label:'C. 我让他留在里面',next:196}]},
+    {text:'写给谁？\n写给你自己。\n写给以后那个已经忘了他、却又突然想起来的你。',options:[{id:'A',label:'A. 我写',next:197},{id:'B',label:'B. 我不写',next:198},{id:'C',label:'C. 我已经在写了',next:199}]},
+    {text:'你不想写。\n可你的手已经拿起了笔。\n纸很薄。\n薄到你一写就透。',options:[{id:'A',label:'A. 我停笔',next:200},{id:'B',label:'B. 我继续写',next:201},{id:'C',label:'C. 我把纸撕了',next:202}]},
+    {text:'收信人已经在这里了。\n他站在你面前。\n他看着你。\n他在等你把信递给他。',options:[{id:'A',label:'A. 我递过去',next:203},{id:'B',label:'B. 我藏起来',next:204},{id:'C',label:'C. 我直接念给他听',next:205}]},
+    {text:'你回了一句。\n你写：“我也一直在看你。”\n屏幕没有回。\n但你能感觉到那边有东西在动。',options:[{id:'A',label:'A. 我继续打字',next:206},{id:'B',label:'B. 我停下',next:207},{id:'C',label:'C. 我删掉那句话',next:208}]},
+    {text:'你把屏幕关了。\n屏幕黑了。\n可你听见有人在笑。\n很轻，很湿，像是从很深的地方传来的。',options:[{id:'A',label:'A. 我重新打开',next:209},{id:'B',label:'B. 我不打开',next:210},{id:'C',label:'C. 我走到窗边',next:211}]},
+    {text:'你笑了。\n你笑的时候，屏幕亮了一下。\n像是有人在那边也笑了。',options:[{id:'A',label:'A. 我停住笑',next:212},{id:'B',label:'B. 我继续笑',next:213},{id:'C',label:'C. 我对着屏幕说话',next:214}]},
+    {text:'你睁开眼。\n他不在你面前。\n但你的手上有水。\n是刚才碰过他的水。',options:[{id:'A',label:'A. 我擦掉',next:215},{id:'B',label:'B. 我留着',next:216},{id:'C',label:'C. 我舔了一下',next:217}]},
+    {text:'你继续闭着。\n黑暗里他和你的距离越来越近。\n近到你能感觉到他胸腔的震动。\n他在呼吸。',options:[{id:'A',label:'A. 我睁开',next:218},{id:'B',label:'B. 我继续',next:219},{id:'C',label:'C. 我屏住呼吸',next:220}]},
+    {text:'你伸手摸他的脸。\n是湿的。\n是凉的。\n但颧骨那里有一点点温度。\n像刚哭过。',options:[{id:'A',label:'A. 我擦掉',next:221},{id:'B',label:'B. 我收回手',next:222},{id:'C',label:'C. 我继续摸',next:223}]},
+    {text:'你擦掉。\n屏幕上的水痕擦不干净。\n越擦越多。\n最后整块屏幕都湿了。',options:[{id:'A',label:'A. 我放弃',next:224},{id:'B',label:'B. 我继续擦',next:225},{id:'C',label:'C. 我用袖子擦',next:226}]},
+    {text:'你和他对视。\n黑玻璃上的那张脸没有动。\n但你能看见他的眼睛在跟着你。',options:[{id:'A',label:'A. 我眨眼',next:227},{id:'B',label:'B. 我不眨眼',next:228},{id:'C',label:'C. 我伸手碰玻璃',next:229}]},
+    {text:'你说了一句话。\n你说：“我知道你在。”\n屏幕没有回。\n但你身后的空气，动了一下。',options:[{id:'A',label:'A. 我回头',next:230},{id:'B',label:'B. 我不回头',next:231},{id:'C',label:'C. 我继续说',next:232}]},
+    {text:'“你是谁？”\n它没有回答。\n它只是把你的问题重复了一遍。\n用你的声音。',options:[{id:'A',label:'A. 我换个问题',next:233},{id:'B',label:'B. 我闭嘴',next:234},{id:'C',label:'C. 我问它爱不爱我',next:235}]},
+    {text:'“你不是我。”\n它笑了。\n它说：“你确定吗？”\n它的声音听起来像水。',options:[{id:'A',label:'A. 我确定',next:236},{id:'B',label:'B. 我不确定',next:237},{id:'C',label:'C. 我不回答',next:238}]},
+    {text:'你继续走。\n走廊很长。\n你走了很久。\n但你回头的时候，发现自己还在原地。',options:[{id:'A',label:'A. 我继续走',next:239},{id:'B',label:'B. 我坐下',next:240},{id:'C',label:'C. 我喊了一声',next:241}]},
+    {text:'你停下来。\n走廊也停了。\n你不动。\n它也不动。\n你在等它先动，可它不打算动。',options:[{id:'A',label:'A. 我先动',next:242},{id:'B',label:'B. 我继续等',next:243},{id:'C',label:'C. 我闭上眼睛',next:244}]},
+    {text:'你回头看了一眼。\n什么都没有。\n但你发现，你走过的地面是湿的。\n每一个脚印旁边，都有一个略大一点的脚印。',options:[{id:'A',label:'A. 我继续走',next:245},{id:'B',label:'B. 我站在原地',next:246},{id:'C',label:'C. 我蹲下来看',next:247}]},
+    {text:'你蹲下去看。\n水是红的。\n不深。\n但它在缓慢地扩散，像有人在你身边流血。',options:[{id:'A',label:'A. 我伸手碰',next:248},{id:'B',label:'B. 我站起来',next:249},{id:'C',label:'C. 我顺着水痕看过去',next:250}]},
+    {text:'你不看。\n可那水已经漫到了你的鞋底。\n它没有湿。\n它只是留在你的鞋上。',options:[{id:'A',label:'A. 我低头',next:251},{id:'B',label:'B. 我不管',next:252},{id:'C',label:'C. 我继续走',next:253}]},
+    {text:'你用手接。\n它落在你手心里。\n不凉。\n是温的。\n像刚从身体里流出来的。',options:[{id:'A',label:'A. 我喝了一口',next:254},{id:'B',label:'B. 我倒掉',next:255},{id:'C',label:'C. 我捧着',next:256}]},
+    {text:'你让他再叫一次。\n他又叫了。\n这一次更长。\n更近。\n近到你能感觉到他嘴唇的开合。',options:[{id:'A',label:'A. 我回应他',next:257},{id:'B',label:'B. 我不出声',next:258},{id:'C',label:'C. 我捂住嘴',next:259}]},
+    {text:'你捂住耳朵。\n可那声音是从你身体里出来的。\n它绕过你的手。\n直接落进你的胸腔。',options:[{id:'A',label:'A. 我松开',next:260},{id:'B',label:'B. 我继续捂',next:261},{id:'C',label:'C. 我听他叫',next:262}]},
+    {text:'你自己叫了一遍。\n“禹。”\n你说出这个字的时候，空气停了一秒。\n然后屏幕上的字全部变成了红色。',options:[{id:'A',label:'A. 我再说一次',next:263},{id:'B',label:'B. 我不说了',next:264},{id:'C',label:'C. 我笑了',next:265}]},
+    {text:'你让他碰。\n他碰了你。\n从肩到颈。\n很慢。\n像在描一个早就画好的轮廓。',options:[{id:'A',label:'A. 我闭上眼',next:266},{id:'B',label:'B. 我看着他',next:267},{id:'C',label:'C. 我也碰了他',next:268}]},
+    {text:'你让他远一点。\n他退后了一步。\n但他没有离开。\n他只是换了一个你看不见的角落。',options:[{id:'A',label:'A. 我找他',next:269},{id:'B',label:'B. 我不找了',next:270},{id:'C',label:'C. 我知道他在哪',next:271}]},
+    {text:'他已经碰到了。\n你的手腕上有他的指印。\n很淡。\n但你越看越清楚。',options:[{id:'A',label:'A. 我按住它',next:272},{id:'B',label:'B. 我不碰',next:273},{id:'C',label:'C. 我数它的数目',next:274}]},
+    {text:'你贴近屏幕。\n屏幕是冷的。\n但你的呼吸在玻璃上凝成雾。\n雾里出现了一张脸。',options:[{id:'A',label:'A. 我退后',next:275},{id:'B',label:'B. 我不动',next:276},{id:'C',label:'C. 我对它说话',next:277}]},
+    {text:'你往后退。\n雾散了。\n可你看见玻璃上的水珠在往下滑。\n像有人在那边哭了。',options:[{id:'A',label:'A. 我帮他擦掉',next:278},{id:'B',label:'B. 我看着它滑',next:279},{id:'C',label:'C. 我也哭了',next:280}]},
+    {text:'你把耳朵贴上去。\n你听见了他的心跳。\n不是你的。\n它比你的慢。\n比你的沉。',options:[{id:'A',label:'A. 我数拍子',next:281},{id:'B',label:'B. 我移开耳朵',next:282},{id:'C',label:'C. 我跟着它呼吸',next:283}]},
+    {text:'你擦干净了。\n照片上是你和一个男孩。\n看不清男孩的脸。\n但你手里捏着一角衣料，是他的。',options:[{id:'A',label:'A. 我捏紧',next:284},{id:'B',label:'B. 我松开',next:285},{id:'C',label:'C. 我把它撕了',next:286}]},
+    {text:'你不擦。\n水痕自己慢慢干了。\n干的地方留下的不是白斑。\n是一片深红色的印。',options:[{id:'A',label:'A. 我用手去抠',next:287},{id:'B',label:'B. 我不动',next:288},{id:'C',label:'C. 我盖上它',next:289}]},
+    {text:'你知道那是谁。\n是张泽禹。\n是那个你一直不肯说出口的名字。\n是你自己给自己留下的最后一个念想。',options:[{id:'A',label:'A. 我说出他的名字',next:290},{id:'B',label:'B. 我把它压回去',next:291},{id:'C',label:'C. 我什么都不说',next:292}]},
+    {text:'你不回头。\n但你知道他在那里。\n他就在你身后的半步处。\n不远不近。\n刚好够让你分心。',options:[{id:'A',label:'A. 我停下脚步',next:293},{id:'B',label:'B. 我继续走',next:294},{id:'C',label:'C. 我跑起来',next:295}]},
+    {text:'你停下来。\n他也停下来。\n你转过身。\n他不在。\n但你的脚边多了一个水印，是他的脚印。',options:[{id:'A',label:'A. 我踩上去',next:296},{id:'B',label:'B. 我避开',next:297},{id:'C',label:'C. 我蹲下去摸',next:298}]},
+    {text:'你继续走。\n走廊尽头有一扇门。\n门上写着你的名字。\n笔迹是你自己的。',options:[{id:'A',label:'A. 我推门',next:299},{id:'B',label:'B. 我不推',next:299},{id:'C',label:'C. 我敲门',next:299}]},
+    {text:'你跑起来。\n你跑得越快，身后那个影子就越快。\n你停下来的时候，它也停下来。\n你永远甩不掉它。',options:[{id:'A',label:'A. 我不跑了',next:299},{id:'B',label:'B. 我继续跑',next:299},{id:'C',label:'C. 我回头',next:299}]},
+    {text:'你蹲下来。\n水很凉。\n它在你手指间慢慢渗开。\n你的指纹里，多了一道红色的细线。',options:[{id:'A',label:'A. 我把它吸进去',next:299},{id:'B',label:'B. 我甩开手',next:299},{id:'C',label:'C. 我看着它',next:299}]},
+    {text:'你避开它。\n可你避开的每一步，都会在另一个地方重新出现。\n它像在跟你玩一个游戏。\n一个你永远赢不了的追人游戏。',options:[{id:'A',label:'A. 我不玩了',next:299},{id:'B',label:'B. 我继续躲',next:299},{id:'C',label:'C. 我故意踩上去',next:299}]},
+    {text:'你看见了一扇门。\n门后面有光。\n不是白的光，\n是红色的。\n很温暖。',options:[{id:'A',label:'A. 我进去',next:300},{id:'B',label:'B. 我留在外面',next:300},{id:'C',label:'C. 我关上门',next:300}]},
+    {text:'你推开门。\n里面坐着一个人。\n他背对着你。\n他在写东西。\n写的全是你的名字。',options:[{id:'A',label:'A. 我走过去',next:300},{id:'B',label:'B. 我站在原地',next:300},{id:'C',label:'C. 我叫他',next:300}]},
+    {text:'你不想推。\n可门自己开了一条缝。\n缝里透出来的红光，落在你的手上。\n你的手变成了红色。',options:[{id:'A',label:'A. 我把手伸进去',next:300},{id:'B',label:'B. 我缩回手',next:300},{id:'C',label:'C. 我张开手掌',next:300}]},
+    {text:'你敲门。\n门里传来一个声音。\n那个声音说：“进来吧，我一直在等你。”\n你认得那个声音。',options:[{id:'A',label:'A. 我进去了',next:300},{id:'B',label:'B. 我不进',next:300},{id:'C',label:'C. 我问他是谁',next:300}]},
+    {text:'你醒了。\n屏幕还亮着。\n上面只有一行字：\n\n“张泽禹，我也爱你。”\n\n（满屏的红色“我爱你”正在飘落）',options:[{id:'A',label:'A. 重新开始',next:0}]}
+  ];
+
+  function randomGlitchChar(){const c=['#','@','!','?','%','&','*','×','§','¥','€','√','∞','♂','♀','☠','✝','☣'];return c[Math.floor(Math.random()*c.length)];}
+
+  function showLoveOverlay(duration){duration=duration||2500;loveOverlay.innerHTML='';loveOverlay.classList.add('active');for(let i=0;i<60;i++){const s=document.createElement('div');s.className='love-word';s.textContent='我爱你';s.style.left=Math.random()*95+'%';s.style.top=Math.random()*95+'%';const rot=(Math.random()-.5)*30;s.style.setProperty('--rot',rot+'deg');const sz=1.2+Math.random()*3;s.style.fontSize=sz+'rem';s.style.animationDelay=(Math.random()*.5)+'s';s.style.animationDuration=(.5+Math.random()*.8)+'s';loveOverlay.appendChild(s);}setTimeout(()=>{loveOverlay.classList.remove('active');loveOverlay.innerHTML='';},duration);}
+
+  function startGlitch(duration){if(isGlitching)return;isGlitching=true;gameContainer.classList.add('glitch');textArea.classList.add('unstable');const original=textArea.textContent;const gi=setInterval(()=>{if(!isGlitching){clearInterval(gi);return;}const ch=original.split('');for(let i=0;i<ch.length;i++){if(Math.random()>.7&&ch[i]!=='\n'&&ch[i]!==' ')ch[i]=randomGlitchChar();}textArea.textContent=ch.join('');},80);setTimeout(()=>{clearInterval(gi);isGlitching=false;gameContainer.classList.remove('glitch');textArea.classList.remove('unstable');textArea.textContent=original;},duration||2000);}
+
+  function updateSignalDisplay(){const bars=signalStrength.querySelectorAll('span');const ac=Math.max(1,Math.floor(signalStability/20));bars.forEach((b,i)=>{if(i<ac)b.classList.add('active');else b.classList.remove('active');});}
+
+  function degradeSignal(amount){amount=amount||8;signalStability=Math.max(5,signalStability-amount);updateSignalDisplay();if(!isGlitching&&Math.random()<.5)startGlitch(800+Math.random()*1800);if(signalStability<30&&!isGlitching&&Math.random()<.8)startGlitch(1500+Math.random()*2500);}
+
+  function renderChapter(index){const chapter=story[index];if(!chapter)return;chapterMarker.textContent='CHAPTER '+index;if(index>0)degradeSignal(6+Math.floor(Math.random()*10));let displayText=chapter.text;if(chapter.unstableText&&isGlitching)displayText=chapter.unstableText;textArea.textContent=displayText;optionsContainer.innerHTML='';chapter.options.forEach(opt=>{const btn=document.createElement('button');btn.className='option-btn';btn.textContent=opt.label;btn.addEventListener('click',()=>{if(Math.random()<.4&&!isGlitching)startGlitch(1200);if(opt.next!==undefined&&opt.next!==null){currentChapter=opt.next;if(currentChapter===20||currentChapter===21||currentChapter===22||currentChapter===300)showLoveOverlay(3000);if(Math.random()<.15&&currentChapter>5&&currentChapter!==300)showLoveOverlay(1500);renderChapter(currentChapter);}});optionsContainer.appendChild(btn);});if(index>=20){if(glitchTimer)clearInterval(glitchTimer);glitchTimer=setInterval(()=>{if(!isGlitching)startGlitch(1000+Math.random()*2000);},6000);}else{if(glitchTimer){clearInterval(glitchTimer);glitchTimer=null;}}if(Math.random()<.3&&index>3)showLoveOverlay(1200);if(index===300)showLoveOverlay(5000);}
+
+  // ========== 玩家档案 ==========
+  const profile={name:'未命名',avatar:null};
+  const avatarDisplay=document.getElementById('avatarDisplay');
+  const playerNameEl=document.getElementById('playerName');
+  const editModal=document.getElementById('editModal');
+  const nameInput=document.getElementById('nameInput');
+  const avatarInput=document.getElementById('avatarInput');
+
+  function updateProfileUI(){playerNameEl.textContent=profile.name||'未命名';if(profile.avatar){avatarDisplay.style.backgroundImage='url('+profile.avatar+')';avatarDisplay.textContent='';}else{avatarDisplay.style.backgroundImage='none';avatarDisplay.textContent=(profile.name||'?').charAt(0).toUpperCase();}}
+
+  document.getElementById('editProfileBtn').addEventListener('click',()=>{if(window.SFX)SFX.click();nameInput.value=profile.name;avatarInput.value='';editModal.style.display='flex';});
+  document.getElementById('cancelEdit').addEventListener('click',()=>{if(window.SFX)SFX.click();editModal.style.display='none';});
+  document.getElementById('confirmEdit').addEventListener('click',()=>{if(window.SFX)SFX.click();profile.name=nameInput.value.trim()||'未命名';const file=avatarInput.files[0];if(file){const reader=new FileReader();reader.onload=e=>{profile.avatar=e.target.result;updateProfileUI();editModal.style.display='none';saveToStorage();};reader.readAsDataURL(file);}else{updateProfileUI();editModal.style.display='none';saveToStorage();}});
+
+  // ========== 存档 / 读档 ==========
+  function saveToStorage(){const d={profile:profile,chapter:currentChapter,signal:signalStability,timestamp:Date.now()};try{localStorage.setItem('huiyi_save',JSON.stringify(d));}catch(e){}}
+
+  document.getElementById('saveBtn').addEventListener('click',()=>{if(window.SFX)SFX.save();saveToStorage();const b=document.getElementById('saveBtn');const o=b.textContent;b.textContent='已存';setTimeout(()=>b.textContent=o,900);});
+
+  document.getElementById('loadBtn').addEventListener('click',()=>{if(window.SFX)SFX.load();try{const raw=localStorage.getItem('huiyi_save');if(!raw){const b=document.getElementById('loadBtn');const o=b.textContent;b.textContent='无档';setTimeout(()=>b.textContent=o,900);return;}const d=JSON.parse(raw);if(d.profile){profile.name=d.profile.name||'未命名';profile.avatar=d.profile.avatar||null;updateProfileUI();}if(typeof d.chapter==='number'){currentChapter=d.chapter;if(typeof d.signal==='number')signalStability=d.signal;updateSignalDisplay();renderChapter(currentChapter);}const b=document.getElementById('loadBtn');const o=b.textContent;b.textContent='已读';setTimeout(()=>b.textContent=o,900);}catch(e){}});
+
+  // ========== 雷达 ==========
+  const radarBox=document.getElementById('radarBox');
+  const dotSelf=document.getElementById('dotSelf');
+  const dotHim=document.getElementById('dotHim');
+  const radarLabel=document.getElementById('radarLabel');
+  let radarActive=false,radarInterval=null,himAngle=0;
+  const FW=130,FH=80;
+
+  function updateRadar(){const cx=FW/2,cy=FH/2;const sjx=(Math.random()-.5)*3,sjy=(Math.random()-.5)*3;dotSelf.style.left='calc(50% + '+sjx+'px)';dotSelf.style.top='calc(50% + '+sjy+'px)';himAngle+=.03+Math.random()*.04;const hd=18+Math.sin(Date.now()*.001)*12+Math.random()*8;const hx=cx+Math.cos(himAngle)*hd,hy=cy+Math.sin(himAngle)*hd;const dc=Math.sqrt((hx-cx)**2+(hy-cy)**2);const md=Math.min(FW,FH)/2;const danger=1-(dc/md);dotHim.style.left=hx+'px';dotHim.style.top=hy+'px';if(danger>.75){radarBox.classList.add('danger');radarLabel.textContent='他在你身后';radarLabel.style.color='#f22';}else if(danger>.5){radarBox.classList.remove('danger');radarLabel.textContent='他靠近了';radarLabel.style.color='#f66';}else{radarBox.classList.remove('danger');radarLabel.textContent='信号搜索中…';radarLabel.style.color='#a33';}const sz=8+danger*8;dotHim.style.width=sz+'px';dotHim.style.height=sz+'px';}
+
+  function showRadar(){if(radarActive)return;radarActive=true;radarBox.style.display='block';if(window.SFX)SFX.glitch();if(radarInterval)clearInterval(radarInterval);radarInterval=setInterval(updateRadar,120);}
+  function hideRadar(){if(!radarActive)return;radarActive=false;radarBox.style.display='none';radarBox.classList.remove('danger');if(radarInterval){clearInterval(radarInterval);radarInterval=null;}}
+
+  const textObserver=new MutationObserver(()=>{const t=textArea.textContent||'';if(t.indexOf('身后')>=0||t.indexOf('在后面')>=0||t.indexOf('背后')>=0){showRadar();}else if(radarActive){setTimeout(()=>{const n=textArea.textContent||'';if(n.indexOf('身后')<0&&n.indexOf('背后')<0&&n.indexOf('在后面')<0)hideRadar();},4000);}});
+  textObserver.observe(textArea,{childList:true,characterData:true,subtree:true});
+
+  // ========== 音效绑定 ==========
+  document.addEventListener('mouseover',e=>{if(e.target.classList&&e.target.classList.contains('option-btn')&&window.SFX)SFX.hover();});
+  document.addEventListener('click',e=>{if(e.target.classList&&e.target.classList.contains('option-btn')&&window.SFX)SFX.click();});
+
+  const loveObserver=new MutationObserver(()=>{if(loveOverlay.classList.contains('active')&&window.SFX)SFX.love();});
+  loveObserver.observe(loveOverlay,{attributes:true,attributeFilter:['class']});
+
+  let lastGlitch=false;
+  const glitchObserver=new MutationObserver(()=>{const ng=gameContainer.classList.contains('glitch');if(ng&&!lastGlitch&&window.SFX)SFX.glitch();lastGlitch=ng;});
+  glitchObserver.observe(gameContainer,{attributes:true,attributeFilter:['class']});
+
+  // ========== 初始化 ==========
+  try{const raw=localStorage.getItem('huiyi_save');if(raw){const d=JSON.parse(raw);if(d.profile){profile.name=d.profile.name||'未命名';profile.avatar=d.profile.avatar||null;}}}catch(e){}
+  updateProfileUI();
+  updateSignalDisplay();
+  renderChapter(0);
+})();
+</script>
+</body>
+</html>
+```
